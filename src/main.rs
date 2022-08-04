@@ -1,5 +1,4 @@
-use std::path::Path;
-
+use glob::glob;
 use swc_common::errors::{ColorConfig, Handler};
 use swc_common::sync::Lrc;
 use swc_common::SourceMap;
@@ -24,51 +23,63 @@ impl DocVisitor {
 
 impl Visit for DocVisitor {
     fn visit_ts_type_alias_decl(&mut self, node: &TsTypeAliasDecl) {
-        let node = dbg!(node);
         self.types.push(TypeDoc {
             name: node.id.sym.to_string(),
         })
     }
 
-    fn visit_function(&mut self, node: &Function) {
-        let node = dbg!(node);
+    fn visit_ts_interface_decl(&mut self, node: &TsInterfaceDecl) {
+        self.types.push(TypeDoc {
+            name: node.id.sym.to_string(),
+        })
     }
+
+    fn visit_class_decl(&mut self, node: &ClassDecl) {
+        self.types.push(TypeDoc {
+            name: node.ident.sym.to_string(),
+        })
+    }
+
+    fn visit_function(&mut self, node: &Function) {}
 }
 
 fn main() {
-    let cm: Lrc<SourceMap> = Default::default();
-    let handler = Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
-
-    let fm = cm
-        .load_file(Path::new(
-            "/Users/maxdeviant/projects/thaumaturge/src/types.ts",
-        ))
-        .expect("failed to load types.ts");
-
-    let lexer = Lexer::new(
-        Syntax::Typescript(Default::default()),
-        Default::default(),
-        StringInput::from(&*fm),
-        None,
-    );
-
-    let mut parser = Parser::new_from(lexer);
-
-    for e in parser.take_errors() {
-        e.into_diagnostic(&handler).emit();
-    }
-
-    let module = parser
-        .parse_module()
-        .map_err(|mut e| {
-            // Unrecoverable fatal error occurred
-            e.into_diagnostic(&handler).emit()
-        })
-        .expect("failed to parser module");
-
     let mut doc_visitor = DocVisitor::new();
 
-    doc_visitor.visit_module(&module);
+    for entry in glob("/Users/maxdeviant/projects/thaumaturge/src/**/*.ts")
+        .expect("failed to read glob pattern")
+    {
+        match entry {
+            Ok(path) => {
+                let cm: Lrc<SourceMap> = Default::default();
+                let handler =
+                    Handler::with_tty_emitter(ColorConfig::Auto, true, false, Some(cm.clone()));
+
+                let fm = cm.load_file(&path).expect("failed to load types.ts");
+
+                let lexer = Lexer::new(
+                    Syntax::Typescript(Default::default()),
+                    Default::default(),
+                    StringInput::from(&*fm),
+                    None,
+                );
+
+                let mut parser = Parser::new_from(lexer);
+
+                for err in parser.take_errors() {
+                    err.into_diagnostic(&handler).emit();
+                }
+
+                let module = parser
+                    .parse_module()
+                    .map_err(|mut err| err.into_diagnostic(&handler).emit())
+                    .expect("failed to parser module");
+
+                doc_visitor.visit_module(&module);
+            }
+            Err(err) => println!("{:?}", err),
+        }
+    }
 
     for ty in doc_visitor.types {
         println!("{}", ty.name);

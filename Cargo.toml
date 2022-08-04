@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+glob = "0.3"
 swc = "0.212.3"
 swc_common = { version = "0.26.0", features = ["tty-emitter"] }
 swc_ecma_ast = { version = "0.89.1" }
