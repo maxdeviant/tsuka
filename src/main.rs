@@ -1,5 +1,6 @@
 use std::fmt::Write;
 use std::fs::File;
+use std::path::PathBuf;
 
 use glob::glob;
 use pulldown_cmark as markdown;
@@ -13,14 +14,23 @@ use swc_ecma_parser::lexer::Lexer;
 use swc_ecma_parser::{Parser, StringInput, Syntax};
 use swc_ecma_visit::Visit;
 
-struct TypeDoc {
+#[derive(Debug)]
+enum DocItemKind {
+    Class,
+    TypeAlias,
+    Interface,
+}
+
+#[derive(Debug)]
+struct DocItem {
     pub name: String,
+    pub kind: DocItemKind,
     pub description: Option<String>,
 }
 
 struct DocVisitor {
     comments: SwcComments,
-    pub types: Vec<TypeDoc>,
+    pub types: Vec<DocItem>,
 }
 
 impl DocVisitor {
@@ -34,30 +44,34 @@ impl DocVisitor {
 
 impl Visit for DocVisitor {
     fn visit_ts_type_alias_decl(&mut self, node: &TsTypeAliasDecl) {
-        self.types.push(TypeDoc {
+        self.types.push(DocItem {
             name: node.id.sym.to_string(),
+            kind: DocItemKind::TypeAlias,
             description: None,
         })
     }
 
     fn visit_ts_interface_decl(&mut self, node: &TsInterfaceDecl) {
-        self.types.push(TypeDoc {
+        self.types.push(DocItem {
             name: node.id.sym.to_string(),
+            kind: DocItemKind::Interface,
             description: None,
         })
     }
 
     fn visit_class_decl(&mut self, node: &ClassDecl) {
-        self.types.push(TypeDoc {
+        self.types.push(DocItem {
             name: node.ident.sym.to_string(),
+            kind: DocItemKind::Class,
             description: None,
         })
     }
 
     fn visit_export_decl(&mut self, node: &ExportDecl) {
         match &node.decl {
-            Decl::Class(class) => self.types.push(TypeDoc {
+            Decl::Class(class) => self.types.push(DocItem {
                 name: class.ident.sym.to_string(),
+                kind: DocItemKind::Class,
                 description: self
                     .comments
                     .get_leading(node.span.lo())
@@ -81,6 +95,12 @@ fn sanitize_doc_comment(comment: String) -> String {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let output_dir = PathBuf::from("output");
+
+    if !output_dir.exists() {
+        std::fs::create_dir_all(&output_dir)?;
+    }
+
     let mut options = markdown::Options::empty();
     options.insert(markdown::Options::ENABLE_STRIKETHROUGH);
     options.insert(markdown::Options::ENABLE_TABLES);
@@ -132,17 +152,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     writeln!(&mut output, "<div>")?;
                     writeln!(&mut output, "<h1>{}</h1>", ty.name)?;
 
-                    {
-                        let description = ty.description.unwrap_or(String::new());
+                    let description = ty.description.unwrap_or(String::new());
 
-                        let parser = markdown::Parser::new_ext(&description, options);
+                    let parser = markdown::Parser::new_ext(&description, options);
 
-                        let mut description_html = String::new();
-                        markdown::html::push_html(&mut description_html, parser);
-                        writeln!(&mut output, "{}", description_html)?;
-                    }
+                    let mut description_html = String::new();
+                    markdown::html::push_html(&mut description_html, parser);
 
+                    writeln!(&mut output, "{}", description_html)?;
                     writeln!(&mut output, "</div>")?;
+
+                    let mut item_output = String::new();
+                    writeln!(&mut item_output, "<doctype html>")?;
+                    writeln!(&mut item_output, r#"<html lang="en">"#)?;
+                    writeln!(&mut item_output, "<head>")?;
+                    writeln!(&mut item_output, r#"<meta charset="utf-8">"#)?;
+                    writeln!(&mut item_output, "</head>")?;
+                    writeln!(&mut item_output, "<body>")?;
+                    writeln!(&mut item_output, "<h1>{}</h1>", ty.name)?;
+                    writeln!(&mut item_output, "{}", description_html)?;
+                    writeln!(&mut item_output, "</body>")?;
+                    writeln!(&mut item_output, "</html>")?;
+
+                    use std::io::Write;
+
+                    let tag = match ty.kind {
+                        DocItemKind::Class => "class",
+                        DocItemKind::TypeAlias => "type",
+                        DocItemKind::Interface => "interface",
+                    };
+
+                    let output_filepath = output_dir.join(format!("{}.{}.html", tag, ty.name));
+                    let mut output_file = File::create(&output_filepath)?;
+                    output_file.write_all(item_output.as_bytes())?;
                 }
             }
             Err(err) => println!("{:?}", err),
@@ -154,7 +196,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     use std::io::Write;
 
-    let mut output_file = File::create("index.html")?;
+    let output_filepath = output_dir.join("index.html");
+    let mut output_file = File::create(&output_filepath)?;
     output_file.write_all(output.as_bytes())?;
 
     Ok(())

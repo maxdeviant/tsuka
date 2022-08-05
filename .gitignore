@@ -3,7 +3,7 @@
 #
 
 # Development output.
-index.html
+/output
 
 #
 # Rust
