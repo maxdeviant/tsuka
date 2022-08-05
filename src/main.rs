@@ -28,6 +28,18 @@ struct DocItem {
     pub description: Option<String>,
 }
 
+impl DocItem {
+    pub fn filepath(&self) -> PathBuf {
+        let tag = match self.kind {
+            DocItemKind::Class => "class",
+            DocItemKind::TypeAlias => "type",
+            DocItemKind::Interface => "interface",
+        };
+
+        PathBuf::from(format!("{}.{}.html", tag, self.name))
+    }
+}
+
 struct DocVisitor {
     comments: SwcComments,
     pub types: Vec<DocItem>,
@@ -106,6 +118,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(&mut output, r#"<html lang="en">"#)?;
     writeln!(&mut output, "<head>")?;
     writeln!(&mut output, r#"<meta charset="utf-8">"#)?;
+    writeln!(
+        &mut output,
+        r#"<link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css" />"#
+    )?;
     writeln!(&mut output, "</head>")?;
     writeln!(&mut output, "<body>")?;
 
@@ -146,9 +162,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 for ty in doc_visitor.types {
                     writeln!(&mut output, "<div>")?;
-                    writeln!(&mut output, "<h1>{}</h1>", ty.name)?;
+                    writeln!(
+                        &mut output,
+                        r#"<h1><a href="{href}">{}</a></h1>"#,
+                        ty.name,
+                        href = ty.filepath().display(),
+                    )?;
 
-                    let description = ty.description.unwrap_or(String::new());
+                    let description = ty.description.clone().unwrap_or(String::new());
 
                     let parser = markdown::Parser::new_ext(&description, options);
 
@@ -163,6 +184,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     writeln!(&mut item_output, r#"<html lang="en">"#)?;
                     writeln!(&mut item_output, "<head>")?;
                     writeln!(&mut item_output, r#"<meta charset="utf-8">"#)?;
+                    writeln!(
+                        &mut output,
+                        r#"<link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css" />"#
+                    )?;
                     writeln!(&mut item_output, "</head>")?;
                     writeln!(&mut item_output, "<body>")?;
                     writeln!(&mut item_output, "<h1>{}</h1>", ty.name)?;
@@ -170,13 +195,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     writeln!(&mut item_output, "</body>")?;
                     writeln!(&mut item_output, "</html>")?;
 
-                    let tag = match ty.kind {
-                        DocItemKind::Class => "class",
-                        DocItemKind::TypeAlias => "type",
-                        DocItemKind::Interface => "interface",
-                    };
-
-                    let output_filepath = output_dir.join(format!("{}.{}.html", tag, ty.name));
+                    let output_filepath = output_dir.join(&ty.filepath());
                     let mut output_file = File::create(&output_filepath)?;
                     output_file.write_all(item_output.as_bytes())?;
                 }
