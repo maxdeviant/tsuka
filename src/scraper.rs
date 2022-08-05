@@ -6,7 +6,7 @@ use swc_common::sync::Lrc;
 use swc_common::SourceMap;
 use swc_ecma_ast::*;
 use swc_ecma_parser::lexer::Lexer;
-use swc_ecma_parser::{Parser, StringInput, Syntax};
+use swc_ecma_parser::{Parser, StringInput, Syntax, TsConfig};
 use swc_ecma_visit::Visit;
 
 use crate::renderer::Renderer;
@@ -36,7 +36,10 @@ impl Scraper {
                     let comments = SwcComments::default();
 
                     let lexer = Lexer::new(
-                        Syntax::Typescript(Default::default()),
+                        Syntax::Typescript(TsConfig {
+                            decorators: true,
+                            ..Default::default()
+                        }),
                         Default::default(),
                         StringInput::from(&*fm),
                         Some(&comments),
