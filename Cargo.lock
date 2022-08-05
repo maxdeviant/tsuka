@@ -2118,6 +2118,7 @@ name = "tsuka"
 version = "0.1.0"
 dependencies = [
  "glob",
+ "itertools",
  "pulldown-cmark",
  "swc",
  "swc_common",

@@ -6,7 +6,7 @@ use std::path::PathBuf;
 use crate::renderer::Renderer;
 use crate::scraper::Scraper;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DocItemKind {
     Class,
     TypeAlias,
