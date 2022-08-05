@@ -2114,7 +2114,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tsdoc"
+name = "tsuka"
 version = "0.1.0"
 dependencies = [
  "glob",
