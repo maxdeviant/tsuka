@@ -1,4 +1,8 @@
+use std::fmt::Write;
+use std::fs::File;
+
 use glob::glob;
+use pulldown_cmark as markdown;
 use swc::SwcComments;
 use swc_common::comments::Comments;
 use swc_common::errors::{ColorConfig, Handler};
@@ -67,7 +71,16 @@ impl Visit for DocVisitor {
     fn visit_function(&mut self, node: &Function) {}
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut options = markdown::Options::empty();
+    options.insert(markdown::Options::ENABLE_STRIKETHROUGH);
+    options.insert(markdown::Options::ENABLE_TABLES);
+
+    let mut output = String::new();
+    writeln!(&mut output, "<doctype html>")?;
+    writeln!(&mut output, "<html>")?;
+    writeln!(&mut output, "<body>")?;
+
     for entry in glob("/Users/maxdeviant/projects/thaumaturge/src/**/*.ts")
         .expect("failed to read glob pattern")
     {
@@ -104,10 +117,33 @@ fn main() {
                 doc_visitor.visit_module(&module);
 
                 for ty in doc_visitor.types {
-                    println!("{} - {}", ty.name, ty.description.unwrap_or(String::new()));
+                    writeln!(&mut output, "<div>")?;
+                    writeln!(&mut output, "<h1>{}</h1>", ty.name)?;
+
+                    {
+                        let description = ty.description.unwrap_or(String::new());
+
+                        let parser = markdown::Parser::new_ext(&description, options);
+
+                        let mut description_html = String::new();
+                        markdown::html::push_html(&mut description_html, parser);
+                        writeln!(&mut output, "{}", description_html)?;
+                    }
+
+                    writeln!(&mut output, "</div>")?;
                 }
             }
             Err(err) => println!("{:?}", err),
         }
     }
+
+    writeln!(&mut output, "</body>")?;
+    writeln!(&mut output, "</html>")?;
+
+    use std::io::Write;
+
+    let mut output_file = File::create("index.html")?;
+    output_file.write_all(output.as_bytes())?;
+
+    Ok(())
 }
