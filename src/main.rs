@@ -100,6 +100,8 @@ fn sanitize_doc_comment(comment: String) -> String {
         .map(|line| line.trim_start_matches(&[' ', '*']))
         .collect::<Vec<_>>()
         .join("\n")
+        .trim()
+        .to_string()
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -161,22 +163,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 doc_visitor.visit_module(&module);
 
                 for ty in doc_visitor.types {
-                    writeln!(&mut output, "<div>")?;
+                    writeln!(&mut output, r#"<div class="dt-row">"#)?;
+
+                    writeln!(&mut output, r#"<div class="dtc">"#)?;
                     writeln!(
                         &mut output,
-                        r#"<h1><a href="{href}">{}</a></h1>"#,
+                        r#"<h1 class="ma0"><a class="link" href="{href}">{}</a></h1>"#,
                         ty.name,
                         href = ty.filepath().display(),
                     )?;
+                    writeln!(&mut output, "</div>")?;
 
-                    let description = ty.description.clone().unwrap_or(String::new());
+                    writeln!(&mut output, r#"<div class="dtc">"#)?;
 
-                    let parser = markdown::Parser::new_ext(&description, options);
+                    let short_description = ty
+                        .description
+                        .clone()
+                        .unwrap_or(String::new())
+                        .lines()
+                        .next()
+                        .map(|x| x.to_owned())
+                        .unwrap_or(String::new());
 
-                    let mut description_html = String::new();
-                    markdown::html::push_html(&mut description_html, parser);
+                    let parser = markdown::Parser::new_ext(&short_description, options);
 
-                    writeln!(&mut output, "{}", description_html)?;
+                    let mut short_description_html = String::new();
+                    markdown::html::push_html(&mut short_description_html, parser);
+
+                    writeln!(&mut output, "{}", short_description_html)?;
+                    writeln!(&mut output, "</div>")?;
                     writeln!(&mut output, "</div>")?;
 
                     let mut item_output = String::new();
@@ -185,12 +200,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     writeln!(&mut item_output, "<head>")?;
                     writeln!(&mut item_output, r#"<meta charset="utf-8">"#)?;
                     writeln!(
-                        &mut output,
+                        &mut item_output,
                         r#"<link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css" />"#
                     )?;
                     writeln!(&mut item_output, "</head>")?;
                     writeln!(&mut item_output, "<body>")?;
                     writeln!(&mut item_output, "<h1>{}</h1>", ty.name)?;
+
+                    let description = ty.description.clone().unwrap_or(String::new());
+
+                    let parser = markdown::Parser::new_ext(&description, options);
+
+                    let mut description_html = String::new();
+                    markdown::html::push_html(&mut description_html, parser);
+
                     writeln!(&mut item_output, "{}", description_html)?;
                     writeln!(&mut item_output, "</body>")?;
                     writeln!(&mut item_output, "</html>")?;
