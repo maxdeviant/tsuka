@@ -43,35 +43,31 @@ impl DocVisitor {
 }
 
 impl Visit for DocVisitor {
-    fn visit_ts_type_alias_decl(&mut self, node: &TsTypeAliasDecl) {
-        self.types.push(DocItem {
-            name: node.id.sym.to_string(),
-            kind: DocItemKind::TypeAlias,
-            description: None,
-        })
-    }
-
-    fn visit_ts_interface_decl(&mut self, node: &TsInterfaceDecl) {
-        self.types.push(DocItem {
-            name: node.id.sym.to_string(),
-            kind: DocItemKind::Interface,
-            description: None,
-        })
-    }
-
-    fn visit_class_decl(&mut self, node: &ClassDecl) {
-        self.types.push(DocItem {
-            name: node.ident.sym.to_string(),
-            kind: DocItemKind::Class,
-            description: None,
-        })
-    }
-
     fn visit_export_decl(&mut self, node: &ExportDecl) {
         match &node.decl {
             Decl::Class(class) => self.types.push(DocItem {
                 name: class.ident.sym.to_string(),
                 kind: DocItemKind::Class,
+                description: self
+                    .comments
+                    .get_leading(node.span.lo())
+                    .and_then(|comments| comments.first().cloned())
+                    .map(|comment| comment.text.to_string())
+                    .map(sanitize_doc_comment),
+            }),
+            Decl::TsTypeAlias(type_alias) => self.types.push(DocItem {
+                name: type_alias.id.sym.to_string(),
+                kind: DocItemKind::TypeAlias,
+                description: self
+                    .comments
+                    .get_leading(node.span.lo())
+                    .and_then(|comments| comments.first().cloned())
+                    .map(|comment| comment.text.to_string())
+                    .map(sanitize_doc_comment),
+            }),
+            Decl::TsInterface(interface) => self.types.push(DocItem {
+                name: interface.id.sym.to_string(),
+                kind: DocItemKind::Interface,
                 description: self
                     .comments
                     .get_leading(node.span.lo())
@@ -173,8 +169,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     writeln!(&mut item_output, "{}", description_html)?;
                     writeln!(&mut item_output, "</body>")?;
                     writeln!(&mut item_output, "</html>")?;
-
-                    use std::io::Write;
 
                     let tag = match ty.kind {
                         DocItemKind::Class => "class",
