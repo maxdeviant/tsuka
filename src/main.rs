@@ -162,13 +162,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 doc_visitor.visit_module(&module);
 
+                writeln!(&mut output, r#"<div class="dt">"#)?;
+
                 for ty in doc_visitor.types {
                     writeln!(&mut output, r#"<div class="dt-row">"#)?;
 
-                    writeln!(&mut output, r#"<div class="dtc">"#)?;
+                    writeln!(&mut output, r#"<div class="dtc pr3">"#)?;
                     writeln!(
                         &mut output,
-                        r#"<h1 class="ma0"><a class="link" href="{href}">{}</a></h1>"#,
+                        r#"<a class="link" href="{href}">{}</a>"#,
                         ty.name,
                         href = ty.filepath().display(),
                     )?;
@@ -222,6 +224,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let mut output_file = File::create(&output_filepath)?;
                     output_file.write_all(item_output.as_bytes())?;
                 }
+
+                writeln!(&mut output, "</div>")?;
             }
             Err(err) => println!("{:?}", err),
         }
