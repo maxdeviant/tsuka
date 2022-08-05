@@ -102,7 +102,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     options.insert(markdown::Options::ENABLE_TABLES);
 
     let mut output = String::new();
-    writeln!(&mut output, "<doctype html>")?;
+    writeln!(&mut output, "<!doctype html>")?;
     writeln!(&mut output, r#"<html lang="en">"#)?;
     writeln!(&mut output, "<head>")?;
     writeln!(&mut output, r#"<meta charset="utf-8">"#)?;
@@ -159,7 +159,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     writeln!(&mut output, "</div>")?;
 
                     let mut item_output = String::new();
-                    writeln!(&mut item_output, "<doctype html>")?;
+                    writeln!(&mut item_output, "<!doctype html>")?;
                     writeln!(&mut item_output, r#"<html lang="en">"#)?;
                     writeln!(&mut item_output, "<head>")?;
                     writeln!(&mut item_output, r#"<meta charset="utf-8">"#)?;
