@@ -62,13 +62,22 @@ impl Visit for DocVisitor {
                     .comments
                     .get_leading(node.span.lo())
                     .and_then(|comments| comments.first().cloned())
-                    .map(|comment| comment.text.to_string()),
+                    .map(|comment| comment.text.to_string())
+                    .map(sanitize_doc_comment),
             }),
             _ => {}
         }
     }
 
     fn visit_function(&mut self, node: &Function) {}
+}
+
+fn sanitize_doc_comment(comment: String) -> String {
+    comment
+        .lines()
+        .map(|line| line.trim_start_matches(&[' ', '*']))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -78,7 +87,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut output = String::new();
     writeln!(&mut output, "<doctype html>")?;
-    writeln!(&mut output, "<html>")?;
+    writeln!(&mut output, r#"<html lang="en">"#)?;
+    writeln!(&mut output, "<head>")?;
+    writeln!(&mut output, r#"<meta charset="utf-8">"#)?;
+    writeln!(&mut output, "</head>")?;
     writeln!(&mut output, "<body>")?;
 
     for entry in glob("/Users/maxdeviant/projects/thaumaturge/src/**/*.ts")
