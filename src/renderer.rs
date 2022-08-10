@@ -87,15 +87,26 @@ struct Page<'a> {
 
 impl<'a> Render for Page<'a> {
     fn render(&self) -> Markup {
+        let inline_css = r#"
+            .description--short p {
+                margin: 0;
+            }
+        "#;
+
         html! {
             (DOCTYPE)
             head {
                 meta charset="utf-8";
                 title { (self.title) }
                 link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css";
+                style { (inline_css) }
             }
             body.light-gray.bg-dark-blue.avenir {
-                (self.content)
+                main.pa4 {
+                    div.mw8 {
+                        (self.content)
+                    }
+                }
             }
         }
     }
@@ -111,14 +122,14 @@ impl Render for IndexPage {
             title: "Index",
             content: html! {
                 @for (kind, items) in &self.items_by_kind {
-                    h2 {
+                    h2.fw4.bb.b--near-white {
                         @match kind {
                             DocItemKind::Class => "Classes",
                             DocItemKind::TypeAlias => "Type Aliases",
                             DocItemKind::Interface => "Interfaces"
                         }
                     }
-                    div.dt {
+                    div.dt.lh-copy {
                         @for item in items {
                             div.dt-row {
                                 div.dtc.pr3 {
@@ -126,7 +137,7 @@ impl Render for IndexPage {
                                         (item.name)
                                     }
                                 }
-                                div.dtc {
+                                div.description--short.dtc {
                                     (Markdown(item.short_description().unwrap_or(String::new())))
                                 }
                             }
@@ -148,7 +159,7 @@ impl<'a> Render for DocItemPage<'a> {
         Page {
             title: &self.item.name,
             content: html! {
-                h1 { (self.item.name) }
+                h1.fw4 { (self.item.name) }
                 (Markdown(self.item.description.clone().unwrap_or(String::new())))
             },
         }
