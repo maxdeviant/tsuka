@@ -1,9 +1,10 @@
-use std::collections::HashMap;
 use std::fmt::Write;
 use std::fs::File;
 use std::path::PathBuf;
 
+use indexmap::IndexMap;
 use itertools::Itertools;
+use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
 use pulldown_cmark as markdown;
 
 use crate::{DocItem, DocItemKind};
@@ -38,84 +39,102 @@ impl Renderer {
 
         let items_by_kind = items.into_iter().into_group_map_by(|item| item.kind);
 
-        for (kind, items) in items_by_kind {
-            writeln!(&mut output, "<h2>{:?}</h2>", kind)?;
-
-            writeln!(&mut output, r#"<div class="dt">"#)?;
-
+        for (_kind, items) in &items_by_kind {
             for item in items {
-                writeln!(&mut output, r#"<div class="dt-row">"#)?;
-
-                writeln!(&mut output, r#"<div class="dtc pr3">"#)?;
-                writeln!(
-                    &mut output,
-                    r#"<a class="link light-gray" href="{href}">{}</a>"#,
-                    item.name,
-                    href = item.filepath().display(),
-                )?;
-                writeln!(&mut output, "</div>")?;
-
-                writeln!(&mut output, r#"<div class="dtc">"#)?;
-
-                let short_description = item
-                    .description
-                    .clone()
-                    .unwrap_or(String::new())
-                    .lines()
-                    .next()
-                    .map(|x| x.to_owned())
-                    .unwrap_or(String::new());
-
-                let parser = markdown::Parser::new_ext(&short_description, options);
-
-                let mut short_description_html = String::new();
-                markdown::html::push_html(&mut short_description_html, parser);
-
-                writeln!(&mut output, "{}", short_description_html)?;
-                writeln!(&mut output, "</div>")?;
-                writeln!(&mut output, "</div>")?;
-
-                let mut item_output = String::new();
-                writeln!(&mut item_output, "<!doctype html>")?;
-                writeln!(&mut item_output, r#"<html lang="en">"#)?;
-                writeln!(&mut item_output, "<head>")?;
-                writeln!(&mut item_output, r#"<meta charset="utf-8">"#)?;
-                writeln!(
-                    &mut item_output,
-                    r#"<link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css" />"#
-                )?;
-                writeln!(&mut item_output, "</head>")?;
-                writeln!(&mut item_output, "<body>")?;
-                writeln!(&mut item_output, "<h1>{}</h1>", item.name)?;
-
-                let description = item.description.clone().unwrap_or(String::new());
-
-                let parser = markdown::Parser::new_ext(&description, options);
-
-                let mut description_html = String::new();
-                markdown::html::push_html(&mut description_html, parser);
-
-                writeln!(&mut item_output, "{}", description_html)?;
-                writeln!(&mut item_output, "</body>")?;
-                writeln!(&mut item_output, "</html>")?;
-
                 let output_filepath = self.output_dir.join(&item.filepath());
                 let mut output_file = File::create(&output_filepath)?;
-                output_file.write_all(item_output.as_bytes())?;
+                output_file.write_all(DocItemPage { item }.render().into_string().as_bytes())?;
             }
-
-            writeln!(&mut output, "</div>")?;
         }
 
-        writeln!(&mut output, "</body>")?;
-        writeln!(&mut output, "</html>")?;
+        let index_page = IndexPage {
+            items_by_kind: IndexMap::from_iter(items_by_kind),
+        };
 
         use std::io::Write;
 
         let output_filepath = self.output_dir.join("index.html");
         let mut output_file = File::create(&output_filepath)?;
-        output_file.write_all(output.as_bytes())?;
+        output_file.write_all(index_page.render().into_string().as_bytes())?;
 
         Ok(())
+    }
+}
+
+struct Markdown<T: AsRef<str>>(T);
+
+impl<T: AsRef<str>> Render for Markdown<T> {
+    fn render(&self) -> Markup {
+        let mut options = markdown::Options::empty();
+        options.insert(markdown::Options::ENABLE_STRIKETHROUGH);
+        options.insert(markdown::Options::ENABLE_TABLES);
+
+        let mut unsafe_html = String::new();
+        let parser = markdown::Parser::new_ext(self.0.as_ref(), options);
+        markdown::html::push_html(&mut unsafe_html, parser);
+
+        let safe_html = ammonia::clean(&unsafe_html);
+        PreEscaped(safe_html)
+    }
+}
+
+struct IndexPage {
+    items_by_kind: IndexMap<DocItemKind, Vec<DocItem>>,
+}
+
+impl Render for IndexPage {
+    fn render(&self) -> Markup {
+        html! {
+            (DOCTYPE)
+            head {
+                meta charset="utf-8";
+                link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css";
+            }
+            body.light-gray.bg-dark-blue {
+                @for (kind, items) in &self.items_by_kind {
+                    h2 {
+                        @match kind {
+                            DocItemKind::Class => "Classes",
+                            DocItemKind::TypeAlias => "Type Aliases",
+                            DocItemKind::Interface => "Interfaces"
+                        }
+                    }
+                    div.dt {
+                        @for item in items {
+                            div.dt-row {
+                                div.dtc.pr3 {
+                                    a.link.light-gray href=(item.filepath().display()) {
+                                        (item.name)
+                                    }
+                                }
+                                div.dtc {
+                                    (Markdown(item.short_description().unwrap_or(String::new())))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct DocItemPage<'a> {
+    item: &'a DocItem,
+}
+
+impl<'a> Render for DocItemPage<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            (DOCTYPE)
+            head {
+                meta charset="utf-8";
+                link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css";
+            }
+            body.light-gray.bg-dark-blue {
+                h1 { (self.item.name) }
+                (Markdown(self.item.description.clone().unwrap_or(String::new())))
+            }
+        }
     }
 }

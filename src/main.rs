@@ -30,6 +30,15 @@ impl DocItem {
 
         PathBuf::from(format!("{}.{}.html", tag, self.name))
     }
+
+    pub fn short_description(&self) -> Option<String> {
+        self.description
+            .clone()
+            .unwrap_or(String::new())
+            .lines()
+            .next()
+            .map(|x| x.to_owned())
+    }
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
