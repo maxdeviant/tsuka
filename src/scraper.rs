@@ -90,42 +90,58 @@ impl ModuleScraper {
 
 impl Visit for ModuleScraper {
     fn visit_export_decl(&mut self, node: &ExportDecl) {
+        let description = self
+            .comments
+            .get_leading(node.span.lo())
+            .and_then(|comments| comments.first().cloned())
+            .map(|comment| comment.text.to_string())
+            .map(sanitize_doc_comment);
+
         match &node.decl {
             Decl::Class(class) => self.items.push(DocItem {
                 name: class.ident.sym.to_string(),
                 kind: DocItemKind::Class,
-                description: self
-                    .comments
-                    .get_leading(node.span.lo())
-                    .and_then(|comments| comments.first().cloned())
-                    .map(|comment| comment.text.to_string())
-                    .map(sanitize_doc_comment),
+                description,
             }),
             Decl::TsTypeAlias(type_alias) => self.items.push(DocItem {
                 name: type_alias.id.sym.to_string(),
                 kind: DocItemKind::TypeAlias,
-                description: self
-                    .comments
-                    .get_leading(node.span.lo())
-                    .and_then(|comments| comments.first().cloned())
-                    .map(|comment| comment.text.to_string())
-                    .map(sanitize_doc_comment),
+                description,
             }),
             Decl::TsInterface(interface) => self.items.push(DocItem {
                 name: interface.id.sym.to_string(),
                 kind: DocItemKind::Interface,
-                description: self
-                    .comments
-                    .get_leading(node.span.lo())
-                    .and_then(|comments| comments.first().cloned())
-                    .map(|comment| comment.text.to_string())
-                    .map(sanitize_doc_comment),
+                description,
             }),
+            Decl::Fn(fn_decl) => self.items.push(DocItem {
+                name: fn_decl.ident.sym.to_string(),
+                kind: DocItemKind::Function,
+                description,
+            }),
+            Decl::Var(var_decl) => {
+                for var in &var_decl.decls {
+                    if let Some(ident) = var.name.as_ident() {
+                        let is_function = var
+                            .init
+                            .as_ref()
+                            .map(|init| init.is_arrow())
+                            .unwrap_or(false);
+
+                        self.items.push(DocItem {
+                            name: ident.id.sym.to_string(),
+                            kind: if is_function {
+                                DocItemKind::Function
+                            } else {
+                                DocItemKind::Var
+                            },
+                            description: description.clone(),
+                        })
+                    }
+                }
+            }
             _ => {}
         }
     }
-
-    fn visit_function(&mut self, node: &Function) {}
 }
 
 fn sanitize_doc_comment(comment: String) -> String {

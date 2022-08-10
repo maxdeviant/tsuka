@@ -13,6 +13,8 @@ pub enum DocItemKind {
     Class,
     TypeAlias,
     Interface,
+    Function,
+    Var,
 }
 
 #[derive(Debug)]
@@ -28,6 +30,8 @@ impl DocItem {
             DocItemKind::Class => "class",
             DocItemKind::TypeAlias => "type",
             DocItemKind::Interface => "interface",
+            DocItemKind::Function => "function",
+            DocItemKind::Var => "var",
         };
 
         PathBuf::from(format!("{}.{}.html", tag, self.name))

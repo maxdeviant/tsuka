@@ -30,6 +30,8 @@ impl Renderer {
             DocItemKind::Class,
             DocItemKind::Interface,
             DocItemKind::TypeAlias,
+            DocItemKind::Function,
+            DocItemKind::Var,
         ];
 
         for kind in *kind_order {
@@ -51,6 +53,11 @@ impl Renderer {
                 .or_insert(Vec::new())
                 .push(item);
         }
+
+        let mut items_by_kind = items_by_kind
+            .into_iter()
+            .filter(|(_kind, items)| !items.is_empty())
+            .collect::<IndexMap<_, _>>();
 
         for (_kind, items) in &mut items_by_kind {
             items.sort_unstable_by(|a, b| a.name.cmp(&b.name));
@@ -147,7 +154,9 @@ impl Render for IndexPage {
                         @match kind {
                             DocItemKind::Class => "Classes",
                             DocItemKind::TypeAlias => "Type Aliases",
-                            DocItemKind::Interface => "Interfaces"
+                            DocItemKind::Interface => "Interfaces",
+                            DocItemKind::Function => "Functions",
+                            DocItemKind::Var => "Variables"
                         }
                     }
                     div.dt.lh-copy {
