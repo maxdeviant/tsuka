@@ -92,6 +92,9 @@ impl<'a> Render for Page<'a> {
     fn render(&self) -> Markup {
         let inline_css = r#"
             .sidebar {
+                position: sticky;
+                top: 0;
+                left: 0;
                 width: 250px;
                 min-width: 200px;
                 height: 100vh;
