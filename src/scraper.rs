@@ -54,7 +54,7 @@ impl Scraper {
                     let module = parser
                         .parse_typescript_module()
                         .map_err(|mut err| err.into_diagnostic(&handler).emit())
-                        .expect("failed to parser module");
+                        .expect("failed to parse module");
 
                     let mut scraper = ModuleScraper::new(comments);
 
