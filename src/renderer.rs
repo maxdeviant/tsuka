@@ -1,4 +1,5 @@
 use std::fs::File;
+use std::io::Write;
 use std::path::PathBuf;
 
 use indexmap::IndexMap;
@@ -56,8 +57,6 @@ impl Renderer {
         }
 
         let index_page = IndexPage { items_by_kind };
-
-        use std::io::Write;
 
         let output_filepath = self.output_dir.join("index.html");
         let mut output_file = File::create(&output_filepath)?;
