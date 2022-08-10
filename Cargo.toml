@@ -7,11 +7,12 @@ edition = "2021"
 
 [dependencies]
 ammonia = "3.2"
+clap = { version = "3.2", features = ["derive"] }
 glob = "0.3"
 indexmap = "1.9"
-itertools = "0.10"
 maud = "0.23"
 pulldown-cmark = "0.9"
+shellexpand = "2.1"
 swc = "0.212.3"
 swc_common = { version = "0.26.0", features = ["tty-emitter"] }
 swc_ecma_ast = { version = "0.89.1" }

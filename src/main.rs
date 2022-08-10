@@ -3,6 +3,8 @@ mod scraper;
 
 use std::path::PathBuf;
 
+use clap::Parser;
+
 use crate::renderer::Renderer;
 use crate::scraper::Scraper;
 
@@ -41,7 +43,15 @@ impl DocItem {
     }
 }
 
+#[derive(Debug, Parser)]
+#[clap(author, version, about, long_about = None)]
+struct Args {
+    input: String,
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args = Args::parse();
+
     let output_dir = PathBuf::from("output");
 
     if !output_dir.exists() {
@@ -49,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let mut scraper = Scraper::new();
-    scraper.scrape("/Users/maxdeviant/projects/thaumaturge/src/**/*.ts")?;
+    scraper.scrape(&shellexpand::tilde(&args.input))?;
 
     let renderer = Renderer::new(output_dir);
     scraper.render(&renderer)?;
