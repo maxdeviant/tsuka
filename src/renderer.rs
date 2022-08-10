@@ -88,6 +88,12 @@ struct Page<'a> {
 impl<'a> Render for Page<'a> {
     fn render(&self) -> Markup {
         let inline_css = r#"
+            .sidebar {
+                width: 250px;
+                min-width: 200px;
+                height: 100vh;
+            }
+        
             .description--short p {
                 margin: 0;
             }
@@ -102,9 +108,18 @@ impl<'a> Render for Page<'a> {
                 style { (inline_css) }
             }
             body.light-gray.bg-dark-blue.avenir {
-                main.pa4 {
-                    div.mw8 {
-                        (self.content)
+                div.flex {
+                    nav.sidebar.bg-navy {
+                        div.pl4 {
+                            h2.fw4 {
+                                "Thaumaturge"
+                            }
+                        }
+                    }
+                    main.pa4 {
+                        div.mw8 {
+                            (self.content)
+                        }
                     }
                 }
             }
