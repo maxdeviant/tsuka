@@ -1,9 +1,7 @@
-use std::fmt::Write;
 use std::fs::File;
 use std::path::PathBuf;
 
 use indexmap::IndexMap;
-use itertools::Itertools;
 use maud::{html, Markup, PreEscaped, Render, DOCTYPE};
 use pulldown_cmark as markdown;
 
@@ -25,31 +23,35 @@ impl Renderer {
         options.insert(markdown::Options::ENABLE_STRIKETHROUGH);
         options.insert(markdown::Options::ENABLE_TABLES);
 
-        let mut output = String::new();
-        writeln!(&mut output, "<!doctype html>")?;
-        writeln!(&mut output, r#"<html lang="en">"#)?;
-        writeln!(&mut output, "<head>")?;
-        writeln!(&mut output, r#"<meta charset="utf-8">"#)?;
-        writeln!(
-            &mut output,
-            r#"<link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css" />"#
-        )?;
-        writeln!(&mut output, "</head>")?;
-        writeln!(&mut output, r#"<body class="light-gray bg-dark-blue">"#)?;
+        let mut items_by_kind = IndexMap::new();
 
-        let items_by_kind = items.into_iter().into_group_map_by(|item| item.kind);
+        let kind_order = &[
+            DocItemKind::Class,
+            DocItemKind::Interface,
+            DocItemKind::TypeAlias,
+        ];
 
-        for (_kind, items) in &items_by_kind {
-            for item in items {
-                let output_filepath = self.output_dir.join(&item.filepath());
-                let mut output_file = File::create(&output_filepath)?;
-                output_file.write_all(DocItemPage { item }.render().into_string().as_bytes())?;
-            }
+        for kind in *kind_order {
+            items_by_kind.entry(kind).or_insert(Vec::new());
         }
 
-        let index_page = IndexPage {
-            items_by_kind: IndexMap::from_iter(items_by_kind),
-        };
+        for item in items {
+            let output_filepath = self.output_dir.join(&item.filepath());
+            let mut output_file = File::create(&output_filepath)?;
+            output_file.write_all(
+                DocItemPage { item: &item }
+                    .render()
+                    .into_string()
+                    .as_bytes(),
+            )?;
+
+            items_by_kind
+                .entry(item.kind)
+                .or_insert(Vec::new())
+                .push(item);
+        }
+
+        let index_page = IndexPage { items_by_kind };
 
         use std::io::Write;
 
