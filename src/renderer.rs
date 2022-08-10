@@ -80,19 +80,36 @@ impl<T: AsRef<str>> Render for Markdown<T> {
     }
 }
 
+struct Page<'a> {
+    title: &'a str,
+    content: Markup,
+}
+
+impl<'a> Render for Page<'a> {
+    fn render(&self) -> Markup {
+        html! {
+            (DOCTYPE)
+            head {
+                meta charset="utf-8";
+                title { (self.title) }
+                link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css";
+            }
+            body.light-gray.bg-dark-blue.avenir {
+                (self.content)
+            }
+        }
+    }
+}
+
 struct IndexPage {
     items_by_kind: IndexMap<DocItemKind, Vec<DocItem>>,
 }
 
 impl Render for IndexPage {
     fn render(&self) -> Markup {
-        html! {
-            (DOCTYPE)
-            head {
-                meta charset="utf-8";
-                link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css";
-            }
-            body.light-gray.bg-dark-blue {
+        Page {
+            title: "Index",
+            content: html! {
                 @for (kind, items) in &self.items_by_kind {
                     h2 {
                         @match kind {
@@ -116,8 +133,9 @@ impl Render for IndexPage {
                         }
                     }
                 }
-            }
+            },
         }
+        .render()
     }
 }
 
@@ -127,16 +145,13 @@ struct DocItemPage<'a> {
 
 impl<'a> Render for DocItemPage<'a> {
     fn render(&self) -> Markup {
-        html! {
-            (DOCTYPE)
-            head {
-                meta charset="utf-8";
-                link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css";
-            }
-            body.light-gray.bg-dark-blue {
+        Page {
+            title: &self.item.name,
+            content: html! {
                 h1 { (self.item.name) }
                 (Markdown(self.item.description.clone().unwrap_or(String::new())))
-            }
+            },
         }
+        .render()
     }
 }
