@@ -34,7 +34,7 @@ impl Renderer {
             r#"<link rel="stylesheet" href="https://unpkg.com/tachyons@4.12.0/css/tachyons.min.css" />"#
         )?;
         writeln!(&mut output, "</head>")?;
-        writeln!(&mut output, "<body>")?;
+        writeln!(&mut output, r#"<body class="light-gray bg-dark-blue">"#)?;
 
         let items_by_kind = items.into_iter().into_group_map_by(|item| item.kind);
 
@@ -49,7 +49,7 @@ impl Renderer {
                 writeln!(&mut output, r#"<div class="dtc pr3">"#)?;
                 writeln!(
                     &mut output,
-                    r#"<a class="link" href="{href}">{}</a>"#,
+                    r#"<a class="link light-gray" href="{href}">{}</a>"#,
                     item.name,
                     href = item.filepath().display(),
                 )?;
