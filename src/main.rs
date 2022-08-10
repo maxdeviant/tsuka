@@ -38,21 +38,13 @@ impl DocItem {
     }
 
     pub fn short_description(&self) -> Option<String> {
-        if let Some(description) = &self.description {
-            let mut short_description = String::new();
-
-            for line in description.lines() {
-                if line.is_empty() {
-                    break;
-                }
-
-                short_description += &format!(" {}", line);
-            }
-
-            Some(short_description)
-        } else {
-            None
-        }
+        self.description.as_ref().map(|description| {
+            description
+                .lines()
+                .take_while(|line| !line.is_empty())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
     }
 }
 
