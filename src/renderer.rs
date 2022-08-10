@@ -51,6 +51,10 @@ impl Renderer {
                 .push(item);
         }
 
+        for (_kind, items) in &mut items_by_kind {
+            items.sort_unstable_by(|a, b| a.name.cmp(&b.name));
+        }
+
         let index_page = IndexPage { items_by_kind };
 
         use std::io::Write;
