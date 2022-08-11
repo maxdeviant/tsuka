@@ -1,0 +1,24 @@
+{
+  "name": "tsuka",
+  "version": "0.0.1",
+  "repository": "https://github.com/maxdeviant/tsuka",
+  "author": "Marshall Bowers <elliott.codes@gmail.com>",
+  "license": "MIT",
+  "description": "A documentation generator for TypeScript.",
+  "bin": {
+    "tsuka": "run.js"
+  },
+  "scripts": {
+    "prepack": "cp ../../README.md . && cp ../../LICENSE .",
+    "postinstall": "node ./install.js",
+    "format": "prettier --ignore-path .gitignore --write '**/*.+(js|json|md|ts|tsx)'"
+  },
+  "dependencies": {
+    "axios-proxy-builder": "0.1.2",
+    "binary-install": "1.0.6",
+    "console.table": "0.10.0"
+  },
+  "devDependencies": {
+    "prettier": "2.7.1"
+  }
+}
