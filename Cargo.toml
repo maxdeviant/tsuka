@@ -1,6 +1,10 @@
 [package]
 name = "tsuka"
 version = "0.0.1"
+description = "A documentation generator for TypeScript."
+repository = "https://github.com/maxdeviant/tsuka"
+authors = ["Marshall Bowers <elliott.codes@gmail.com>"]
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
