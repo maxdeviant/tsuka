@@ -7,9 +7,27 @@ const { name, version, repository } = require('./package.json');
 
 const SUPPORTED_PLATFORMS = [
   {
+    TYPE: 'Windows_NT',
+    ARCHITECTURE: 'x64',
+    RUST_TARGET: 'x86_64-pc-windows-gnu',
+    BINARY_NAME: `${name}.exe`,
+  },
+  {
     TYPE: 'Linux',
     ARCHITECTURE: 'x64',
     RUST_TARGET: 'x86_64-unknown-linux-musl',
+    BINARY_NAME: name,
+  },
+  {
+    TYPE: 'Darwin',
+    ARCHITECTURE: 'x64',
+    RUST_TARGET: 'x86_64-apple-darwin',
+    BINARY_NAME: name,
+  },
+  {
+    TYPE: 'Darwin',
+    ARCHITECTURE: 'arm64',
+    RUST_TARGET: 'x86_64-apple-darwin',
     BINARY_NAME: name,
   },
 ];
