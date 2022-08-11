@@ -2,4 +2,4 @@
 
 const { install: maybeInstall, run } = require('./binary');
 
-maybeInstall(true).then(run);
+maybeInstall({ suppressLogs: true }).then(run);
