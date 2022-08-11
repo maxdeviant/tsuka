@@ -60,7 +60,7 @@ const getPlatform = () => {
 
 const getBinary = () => {
   const platform = getPlatform();
-  const url = `${repository.url}/releases/download/v${version}/v${name}_${version}_${platform.RUST_TARGET}.tar.gz`;
+  const url = `${repository.url}/releases/download/v${version}/${name}_v${version}_${platform.RUST_TARGET}.tar.gz`;
 
   return new Binary(platform.BINARY_NAME, url);
 };
