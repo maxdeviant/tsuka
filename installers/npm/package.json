@@ -1,7 +1,10 @@
 {
   "name": "tsuka",
   "version": "0.0.1",
-  "repository": "https://github.com/maxdeviant/tsuka",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/maxdeviant/tsuka"
+  },
   "author": "Marshall Bowers <elliott.codes@gmail.com>",
   "license": "MIT",
   "description": "A documentation generator for TypeScript.",
