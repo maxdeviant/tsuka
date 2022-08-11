@@ -1,6 +1,6 @@
 [package]
 name = "tsuka"
-version = "0.0.1"
+version = "0.0.2"
 description = "A documentation generator for TypeScript."
 repository = "https://github.com/maxdeviant/tsuka"
 authors = ["Marshall Bowers <elliott.codes@gmail.com>"]
