@@ -1,6 +1,6 @@
 const os = require('os');
 const { configureProxy } = require('axios-proxy-builder');
-const { Binary } = require('binary-install');
+const { binary, makeInstaller, run: runBinary } = require('install-bin');
 const cTable = require('console.table');
 
 const { name, version, repository } = require('./package.json');
@@ -62,19 +62,30 @@ const getBinary = () => {
   const platform = getPlatform();
   const url = `${repository.url}/releases/download/v${version}/${name}_v${version}_${platform.RUST_TARGET}.tar.gz`;
 
-  return new Binary(platform.BINARY_NAME, url);
+  return binary({ name: platform.BINARY_NAME, url });
 };
 
-const install = ({ suppressLogs } = { suppressLogs: false }) => {
+const install = ({ logLevel } = { logLevel: 'info' }) => {
   const binary = getBinary();
-  const proxy = configureProxy(binary.url);
 
-  return binary.install(proxy, suppressLogs);
+  const { install } = makeInstaller({
+    root: __dirname,
+    binary,
+    logLevel,
+    requestOptions: configureProxy(binary.url),
+  });
+
+  return install();
 };
 
 const run = () => {
   const binary = getBinary();
-  binary.run();
+
+  runBinary({
+    root: __dirname,
+    binary,
+    requestOptions: configureProxy(binary.url),
+  });
 };
 
 module.exports = { install, run };

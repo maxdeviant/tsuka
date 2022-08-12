@@ -18,8 +18,8 @@
   },
   "dependencies": {
     "axios-proxy-builder": "0.1.2",
-    "binary-install": "1.0.6",
-    "console.table": "0.10.0"
+    "console.table": "0.10.0",
+    "install-bin": "0.3.0"
   },
   "devDependencies": {
     "prettier": "2.7.1"

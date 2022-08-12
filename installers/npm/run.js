@@ -2,4 +2,4 @@
 
 const { install: maybeInstall, run } = require('./binary');
 
-maybeInstall({ suppressLogs: true }).then(run);
+maybeInstall({ logLevel: 'warn' }).then(run);
